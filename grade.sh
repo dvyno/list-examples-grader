@@ -25,7 +25,6 @@ then
     echo "Compile successful"
 else
     echo "Could not compile ListExamples.java"
-    # echo `cat log.txt`
     exit 1
 fi
 
@@ -36,15 +35,11 @@ then
     echo "Score: 100 / 100"
 else
     # echo "Tests: FAILED"
-    RESULT=`grep "Tests run:" log.txt`
+    RESULTS=`grep "Tests run:" log.txt`
 
     # Parse results for number
-    # TESTS=${RESULTS:11:1}
-    # FAILS=${RESULTS:25:1}
-    TESTS=$(echo $RESULT | cut -f1 -d,)
-    FAILS=$(echo $RESULT | cut -f2 -d,)
-    TESTS=${TESTS#"Tests run: "}
-    FAILS=${FAILS#" Failures: "}
+    TESTS=${RESULTS:11:1}
+    FAILS=${RESULTS:25:1}
     SCORE=$((($TESTS - $FAILS) * 100 / $TESTS))
     echo "Score: $SCORE / 100"
 fi
