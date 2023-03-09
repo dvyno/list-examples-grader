@@ -1,25 +1,47 @@
 CPATH='.:lib/hamcrest-core-1.3.jar:lib/junit-4.13.2.jar'
 
+# Remove previous directories
 rm -rf student-submission
+rm -rf out
+rm -f ListExamples.java
+
+# Clone student submission
 git clone $1 student-submission
 echo 'Finished cloning'
 
-# Check ListExamples.java exists
+# Verify ListExamples.java submitted
 if [[ -f student-submission/ListExamples.java ]]
 then
-    echo "ListExamples found"
+    echo "ListExamples.java found"
+    cp student-submission/ListExamples.java ./
 else
-    echo "Need file ListExamples.java"
+    echo "Missing file ListExamples.java"
     exit 1
 fi
 
-# Copy tester to and library to student-submission
-cd student-submission
-cp ../TestListExamples.java ./
-cp -R ../lib ./
+# Verify filter method signature
+grep -q "static List<String> filter(List<String> list, StringChecker sc)" ListExamples.java
+if [[ $? -eq 0 ]]
+then
+    echo "filter method header found"
+else
+    echo "filter method header missing"
+    exit 1
+fi
 
-# Compile tester
-javac -cp $CPATH *.java 2> log.txt
+# Verify merge method signature
+grep -q "static List<String> merge(List<String> list1, List<String> list2)" ListExamples.java
+if [[ $? -eq 0 ]]
+then
+    echo "merge method header found"
+    mkdir out out/logs
+else
+    echo "merge method header missing"
+    exit 1
+fi
+
+# Verify code compiles
+javac -d out -cp $CPATH *.java > out/logs/compile.log
 if [[ $? -eq 0 ]]
 then
     echo "Compile successful"
@@ -28,19 +50,18 @@ else
     exit 1
 fi
 
-java -cp $CPATH org.junit.runner.JUnitCore TestListExamples > log.txt
-if [[ $? -eq 0 ]]
+# Run tests and save output to test.log
+java -cp "${CPATH}:out" org.junit.runner.JUnitCore TestListExamples > out/logs/test.log
+if [[ $? -eq  0 ]]
 then
-    # echo "Tests: PASSED"
-    echo "Score: 100 / 100"
+    TESTS=1
+    FAILS=0
 else
-    # echo "Tests: FAILED"
-    RESULTS=`grep "Tests run:" log.txt`
-
-    # Parse results for number
+    RESULTS=`grep "Tests run:" out/test.log`
     TESTS=${RESULTS:11:1}
     FAILS=${RESULTS:25:1}
-    SCORE=$((($TESTS - $FAILS) * 100 / $TESTS))
-    echo "Score: $SCORE / 100"
 fi
 
+# Return score
+SCORE=$((($TESTS - $FAILS) * 100 / $TESTS))
+echo "Score: $SCORE / 100"
